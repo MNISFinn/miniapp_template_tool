@@ -6,19 +6,24 @@
 # date：2022-02-01
 # ----------------
 
+
 import os
 import json
+import shutil
 
+# 服务器中项目的公共路径
+service_path = '/Users/shaobin/WeChatProjects/'
 # 模版配置文件
 component_config_path = '/Users/shaobin/WeChatProjects/base_components/template_config.json'
-# 基础模板组件路径
-base_components_path = '/Users/shaobin/WeChatProjects/base_components/'
 # 基础模板路径
-base_template_path = '/Users/shaobin/WeChatProjects/base_template/'
+base_template_path = service_path + 'test_base_template/'
+# 基础模板组件路径
+base_components_path = service_path + 'base_components/'
 # 测试模板路径
 test_template_path = '/Users/shaobin/WeChatProjects/test_template/'
 # 测试模板组件路径
 test_template_pages_path = '/Users/shaobin/WeChatProjects/test_template/pages/'
+
 
 # 写入指定文件
 def append_content(file_path, content):
@@ -26,20 +31,30 @@ def append_content(file_path, content):
     handle.write(content)
     handle.close()
 
-# 创建指定页面
-def create_page(path, name):
-    # 创建文件夹
-    os.mkdir(path + name)
-    # 创建文件
-    open(path+name+'/index.js', 'a').close()
-    open(path+name+'/index.wxml', 'a').close()
-    open(path+name+'/index.wxss', 'a').close()
-    # json文件写入配置，不能为空
-    with open(path+name+'/index.json', 'w', encoding='utf8') as fp:
-        fp.write("{\n  \"usingComponents\": {}\n}")
-    # app.json写入新增的页面
-    with open(test_template_path+'app.json', 'r', encoding='utf8') as fp:
+
+# 加载配置文件
+def load_config():
+    with open(component_config_path, 'r', encoding='utf8') as fp:
         app_json_string = json.load(fp)
-    app_json_string['pages'].append("pages/"+name+'/index')
-    with open(test_template_path+'app_test.json', 'w', encoding='utf8') as fp:
-        json.dump(app_json_string, fp, ensure_ascii=False, indent=2)
+    return app_json_string
+
+
+def init_project(name):
+    project_path = service_path + name
+    if not os.path.exists(project_path):
+        shutil.copytree(os.path.abspath(base_template_path), project_path)
+    return project_path + "/"
+
+
+# 添加组件
+def add_components(components, project_path):
+    if len(components) > 0:
+        for component in components:
+            source_path = os.path.abspath(base_components_path + component)
+            # 自定义的tabBar是直接放在项目根目录的，其余自定义组件统一放到components目录
+            if component == "custom-tab-bar":
+                target_project_path = os.path.abspath(project_path + component)
+            else:
+                target_project_path = os.path.abspath(project_path + "components/" + component)
+            shutil.copytree(source_path, target_project_path)
+            print('添加' + component + '组件成功')
